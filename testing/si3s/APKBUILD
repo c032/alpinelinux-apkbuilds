@@ -1,0 +1,34 @@
+_commit_hash='9d94b08995a8a2ae4e319c3acf16d93159615017'
+_commit_date='20230107'
+
+pkgname='si3s'
+pkgver="0_git${_commit_date}"
+pkgrel='0'
+pkgdesc='Custom i3status.'
+url='https://github.com/c032/si3s'
+arch='all'
+license='MPL-2.0-no-copyleft-exception'
+depends='json-c'
+makedepends='bmake clang json-c-dev'
+checkdepends=''
+source="
+	${pkgname}-${_commit_hash}.tar.gz::https://github.com/c032/si3s/archive/${_commit_hash}.tar.gz
+"
+builddir="${srcdir}/${pkgname}-${_commit_hash}"
+
+build() {
+	bmake
+}
+
+check() {
+	# TODO
+	:
+}
+
+package() {
+	install -m755 -D 'si3s' "${pkgdir}/usr/bin/${pkgname}"
+}
+
+sha512sums="
+5e9ea1865b509ee2d1186c415639050b0b65942d34080181d1e75d3a2e6c2046c760f0c95640b5407ee0dfa5f824b5e742b8b858920be634fb5b157a86441e6c  si3s-9d94b08995a8a2ae4e319c3acf16d93159615017.tar.gz
+"
