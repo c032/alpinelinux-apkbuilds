@@ -54,7 +54,7 @@ def main():
         relpath = os.path.relpath(package_directory, start=HERE)
         print('===> {}'.format(relpath))
         sh('abuild', ['checksum'], working_directory=package_directory)
-        sh('abuild', ['-r'], working_directory=package_directory)
+        sh('abuild', ['-k', '-r'], working_directory=package_directory)
 
 
 if __name__ == '__main__':
