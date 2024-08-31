@@ -1,0 +1,82 @@
+# Maintainer: c032 <alpinelinux@c032.dev>
+
+_github_user='golang'
+_github_repository_name='tools'
+
+_commands="
+	goimports
+	gorename
+"
+
+pkgname='golang-tools'
+pkgver="0.24.0"
+pkgrel='0'
+pkgdesc='Go tools.'
+url='https://github.com/golang/tools'
+arch='all'
+license='BSD-3-Clause'
+makedepends='go'
+checkdepends=''
+options='!check !strip'
+source="
+	./modules.txt
+
+	github.com-${_github_user}-${_github_repository_name}-v${pkgver}.zip::https://proxy.golang.org/github.com/${_github_user}/${_github_repository_name}/@v/v${pkgver}.zip
+
+	github.com-google-go-cmp-v0.6.0.zip::https://proxy.golang.org/github.com/google/go-cmp/@v/v0.6.0.zip
+	github.com-yuin-goldmark-v1.4.13.zip::https://proxy.golang.org/github.com/yuin/goldmark/@v/v1.4.13.zip
+	golang.org-x-mod-v0.20.0.zip::https://proxy.golang.org/golang.org/x/mod/@v/v0.20.0.zip
+	golang.org-x-net-v0.28.0.zip::https://proxy.golang.org/golang.org/x/net/@v/v0.28.0.zip
+	golang.org-x-sync-v0.8.0.zip::https://proxy.golang.org/golang.org/x/sync/@v/v0.8.0.zip
+	golang.org-x-sys-v0.23.0.zip::https://proxy.golang.org/golang.org/x/sys/@v/v0.23.0.zip
+	golang.org-x-telemetry-v0.0.0-20240521205824-bda55230c457.zip::https://proxy.golang.org/golang.org/x/telemetry/@v/v0.0.0-20240521205824-bda55230c457.zip
+"
+builddir="${srcdir}/github.com/${_github_user}/${_github_repository_name}@v${pkgver}"
+
+prepare() {
+	default_prepare
+
+	mkdir "${builddir}/vendor"
+	cp "${srcdir}/modules.txt" "${builddir}/vendor/modules.txt"
+}
+
+build() {
+	export CGO_ENABLED='0'
+	export GOFLAGS='-mod=vendor -trimpath'
+	export GOTOOLCHAIN='local'
+
+	( cd "${srcdir}" && tar -cf 'vendor.tar' --exclude="github.com/${_github_user}/${_github_repository_name}@*" 'github.com' 'golang.org')
+	( cd "${builddir}/vendor/" && tar -xf "${srcdir}/vendor.tar" )
+
+	mv "${builddir}/vendor/github.com/google/go-cmp@v0.6.0" "${builddir}/vendor/github.com/google/go-cmp"
+	mv "${builddir}/vendor/github.com/yuin/goldmark@v1.4.13" "${builddir}/vendor/github.com/yuin/goldmark"
+	mv "${builddir}/vendor/golang.org/x/mod@v0.20.0" "${builddir}/vendor/golang.org/x/mod"
+	mv "${builddir}/vendor/golang.org/x/net@v0.28.0" "${builddir}/vendor/golang.org/x/net"
+	mv "${builddir}/vendor/golang.org/x/sync@v0.8.0" "${builddir}/vendor/golang.org/x/sync"
+	mv "${builddir}/vendor/golang.org/x/sys@v0.23.0" "${builddir}/vendor/golang.org/x/sys"
+	mv "${builddir}/vendor/golang.org/x/telemetry@v0.0.0-20240521205824-bda55230c457" "${builddir}/vendor/golang.org/x/telemetry"
+
+	for _cmdname in ${_commands}
+	do
+		go build -o "${builddir}/${_cmdname}" "./cmd/${_cmdname}"
+	done
+}
+
+package() {
+	for _cmdname in ${_commands}
+	do
+		install -Dm755 "${builddir}/${_cmdname}" "${pkgdir}/usr/bin/${_cmdname}"
+	done
+}
+
+sha512sums="
+22a27a12c41dd40397496efae713283f49ab0644a28bc285fda6f18f5368683f427068f885e29fcce2a6b2c195be4c6840ca1f4a9804daec22b9fb455a03aa3e  modules.txt
+0020207701c4f84d5a081e8ad7001e2a3f471a0af8eb0b2ba7fcd3ece915d4f1a385bbd9210b2c5a8c93f60d1812ecfbb34f2efcde2242ad716c011ac081e53c  github.com-golang-tools-v0.24.0.zip
+3680bd9a399a018275403b22ceb96250046fd070de474fee16ffa9f872e30a97ec3caa26d17dca2aec8fcbdb6f91932f82b3b1b2284feec004d8fcc95215436f  github.com-google-go-cmp-v0.6.0.zip
+7441a7ca7a9fd67975c47920fa9d379e91c8c75b4a47845c90d89e0d904677b111866659b21b93c9abf5ac9d0cf278cc9f192fd6ae7c1ec3ff382c4b9aed0dca  github.com-yuin-goldmark-v1.4.13.zip
+bc749f2de568a1f69822e194244f8aea1d2446e1f0679b0239c8187bbc294a484a25f1c5ef01ce4fbb3ba99fa768992d88ed7583324349b81d402e497d164f5a  golang.org-x-mod-v0.20.0.zip
+ed2374cc3942cd347fa1feb0ed62e36c312bdfc7a2d9ce92ac53b3e89ffb06a0f6dd3249f4d765e5907f6edf09674edd1b43f58d2ecc4f3116f5c63f6f56f560  golang.org-x-net-v0.28.0.zip
+27f56bbaeef3f2b143057205bf98e1277ba96daedeedc19c237d80b8c26874f56ac96c73f2b9e9081b2a90c98fed758ad8f27881bc1982d0aa32d18f4426bf2d  golang.org-x-sync-v0.8.0.zip
+fc64a7d9df7d8e66d5895a9f0b1674cc320a4f33cc554873bff15b5b8f1db228523c623c2fc23e54f1121a7c4bc07072bc75522c47a09c7a908684c649728418  golang.org-x-sys-v0.23.0.zip
+712efb438f1f24aef7026791c2c0b3544892db5b49e67231bed27c548350cac63ced3637b7cd30af93fcd66026cefe3b8bf7aaf8802392d396a80483b181f8e0  golang.org-x-telemetry-v0.0.0-20240521205824-bda55230c457.zip
+"
