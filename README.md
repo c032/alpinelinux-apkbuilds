@@ -2,6 +2,11 @@
 
 ## Configure repository
 
+> [!NOTE]
+>
+> This is mostly for my personal use, so I might restrict access in the
+> future.
+
 ```sh
 # Add the repository under the `@c032` tag.
 echo '@c032 https://pkg.c032.dev/alpinelinux/v3.20/main' >> /etc/apk/repositories
