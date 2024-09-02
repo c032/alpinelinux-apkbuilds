@@ -20,6 +20,7 @@ checkdepends=''
 options='!check !strip'
 source="
 	./modules.txt
+	./fixvendor.go
 
 	github.com-${_github_user}-${_github_repository_name}-v${pkgver}.zip::https://proxy.golang.org/github.com/${_github_user}/${_github_repository_name}/@v/v${pkgver}.zip
 
@@ -45,16 +46,18 @@ build() {
 	export GOFLAGS='-mod=vendor -trimpath'
 	export GOTOOLCHAIN='local'
 
-	( cd "${srcdir}" && tar -cf 'vendor.tar' --exclude="github.com/${_github_user}/${_github_repository_name}@*" 'github.com' 'golang.org')
-	( cd "${builddir}/vendor/" && tar -xf "${srcdir}/vendor.tar" )
+	_dependencies=$(ls "${srcdir}/"*.zip | grep -v "github.com-${_github_user}-${_github_repository_name}")
 
-	mv "${builddir}/vendor/github.com/google/go-cmp@v0.6.0" "${builddir}/vendor/github.com/google/go-cmp"
-	mv "${builddir}/vendor/github.com/yuin/goldmark@v1.4.13" "${builddir}/vendor/github.com/yuin/goldmark"
-	mv "${builddir}/vendor/golang.org/x/mod@v0.20.0" "${builddir}/vendor/golang.org/x/mod"
-	mv "${builddir}/vendor/golang.org/x/net@v0.28.0" "${builddir}/vendor/golang.org/x/net"
-	mv "${builddir}/vendor/golang.org/x/sync@v0.8.0" "${builddir}/vendor/golang.org/x/sync"
-	mv "${builddir}/vendor/golang.org/x/sys@v0.23.0" "${builddir}/vendor/golang.org/x/sys"
-	mv "${builddir}/vendor/golang.org/x/telemetry@v0.0.0-20240521205824-bda55230c457" "${builddir}/vendor/golang.org/x/telemetry"
+	# Unzip downloaded sources instead of using the files already extracted by
+	# `abuild`, because it's easier this way.
+	for _dependency in $_dependencies
+	do
+		( cd "${builddir}/vendor/" && unzip "${_dependency}" )
+	done
+
+	# Remove the version from the package directory names, because otherwise
+	# their path wouldn't match the path expected by Go.
+	go run "${srcdir}/fixvendor.go" "${builddir}/vendor"
 
 	for _cmdname in ${_commands}
 	do
@@ -71,6 +74,7 @@ package() {
 
 sha512sums="
 22a27a12c41dd40397496efae713283f49ab0644a28bc285fda6f18f5368683f427068f885e29fcce2a6b2c195be4c6840ca1f4a9804daec22b9fb455a03aa3e  modules.txt
+496ca743bc90270166878723b0211593b32086b0618536472c415d53df9131c4927a8d027fc57b714fc5f348fb953b26b5e0a614305bdd7bd83e82d050310bf9  fixvendor.go
 0020207701c4f84d5a081e8ad7001e2a3f471a0af8eb0b2ba7fcd3ece915d4f1a385bbd9210b2c5a8c93f60d1812ecfbb34f2efcde2242ad716c011ac081e53c  github.com-golang-tools-v0.24.0.zip
 3680bd9a399a018275403b22ceb96250046fd070de474fee16ffa9f872e30a97ec3caa26d17dca2aec8fcbdb6f91932f82b3b1b2284feec004d8fcc95215436f  github.com-google-go-cmp-v0.6.0.zip
 7441a7ca7a9fd67975c47920fa9d379e91c8c75b4a47845c90d89e0d904677b111866659b21b93c9abf5ac9d0cf278cc9f192fd6ae7c1ec3ff382c4b9aed0dca  github.com-yuin-goldmark-v1.4.13.zip
